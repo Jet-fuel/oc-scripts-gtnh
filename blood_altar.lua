@@ -18,6 +18,11 @@ local TRANSPOSER_ALTAR_SIDE_ORB = config.transposerAltarOrbSide
 
 local RECIPE_REQUIREMENTS = config.recipeRequirements
 
+local REDSTONE_IO = config.redstoneIO
+local REDSTONE_SIDE = config.redstoneOutputSide
+local REDSTONE_STRENGTH = config.redstoneSignalStrength
+local REDSTONE_LOW_BLOOD_THRESHOLD = config.redstoneLowBloodThreshold
+
 local HELLO_MSG = [[
 Restart this program if patterns has changed. Press Ctrl-C to stop.
 You can put your blood orb in the altar. It will be saved in the orb chest during crafting and put back after that.
@@ -155,7 +160,12 @@ local function checkPatterns(bloodAltar, patternsInfo, recipeRequirements)
     local msg = {}
     for output, _ in pairs(patternsInfo) do
         local requirement = recipeRequirements[string.lower(output)]
-        if bloodAltar.getTier() < requirement.tier then
+        if requirement == nil then
+            msg[#msg + 1] = string.format(
+                "No recipeRequirements entry for pattern output '%s' (looked up as '%s'). Add it to recipeRequirements in blood_altar_config.lua.",
+                output, string.lower(output)
+            )
+        elseif bloodAltar.getTier() < requirement.tier then
             msg[#msg + 1] = string.format(
                 "Pattern of %s needs tier (%d) higher than current one's.",
                 output, requirement.tier
@@ -167,6 +177,20 @@ local function checkPatterns(bloodAltar, patternsInfo, recipeRequirements)
     else
         return true
     end
+end
+
+---Updates the Redstone I/O block's output.
+---Emits a signal while something is being crafted (isCrafting) and/or
+---while the altar's current blood (LP) is below the configured threshold.
+---@param isCrafting boolean
+local function updateRedstoneSignal(isCrafting)
+    if not REDSTONE_IO then
+        return
+    end
+    local lowBlood = REDSTONE_LOW_BLOOD_THRESHOLD ~= nil
+        and BLOOD_ALTAR.getCurrentBlood() < REDSTONE_LOW_BLOOD_THRESHOLD
+    local shouldEmit = isCrafting or lowBlood
+    REDSTONE_IO.setOutput(REDSTONE_SIDE, shouldEmit and (REDSTONE_STRENGTH or 15) or 0)
 end
 
 -- =================================
@@ -422,6 +446,8 @@ local function main()
         if next then
             state = next
         end
+
+        updateRedstoneSignal(state ~= STATE_IDLE)
 
         os.sleep(0.5)
     end
