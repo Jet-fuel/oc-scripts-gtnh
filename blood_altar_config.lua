@@ -12,6 +12,17 @@ local config = {
     transposerAltar = component.proxy("ID2"),
     meInterface = component.me_interface,
     bloodAltar = component.blood_altar,
+    -- Redstone I/O block used to signal crafting activity / low blood.
+    -- Change this to your Redstone I/O block's proxy (same way as the
+    -- transposers above).
+    redstoneIO = component.redstone,
+    -- Side the Redstone I/O block should emit the signal from
+    redstoneOutputSide = sides.top,
+    -- Signal strength to emit (0-15)
+    redstoneSignalStrength = 15,
+    -- Emits the redstone signal if Altar's current blood (LP) falls
+    -- below this amount, in addition to while something is being crafted
+    redstoneLowBloodThreshold = 5000,
     -- Change the following sides according to our setup
     transposerMEInputSide = sides.north,
     transposerMEOutputSide = sides.west,
